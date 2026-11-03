@@ -35,7 +35,7 @@ func (ar *AnsibleRunner) RunPlaybook(playbookPath string) (string, string, error
 	var stderr bytes.Buffer
 
 	opts := &playbook.AnsiblePlaybookOptions{
-		Inventory:  ar.VPS.Ip + ",",
+		Inventory:  ar.VPS.IP + ",",
 		User:       ar.VPS.User,
 		PrivateKey: ar.PrivateKeyPath,
 		Become:     true,
