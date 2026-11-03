@@ -1,7 +1,8 @@
 package models
 
 type VPS struct {
-	Ip string
+	Ip   string
+	User string
 }
 
 func CreateVPS(ip string) *VPS {
