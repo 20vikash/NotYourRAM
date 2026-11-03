@@ -8,11 +8,13 @@ import (
 	models "github.com/20vikash/NotYourRAM/internal/models"
 )
 
+// PPS is not taking into account here, because CPU load already tells some story.
+// And PPS will be a factor in abuse detection, but not in placement. So we can ignore it for now.
+
 type PlacementPolicy struct {
 	MaxCPUUsage     float64
 	MaxMemoryUsage  float64
 	MaxNetworkUsage float64
-	MaxPPSUsage     float64
 
 	Weights PlacementWeights
 }
@@ -20,7 +22,6 @@ type PlacementPolicy struct {
 type PlacementWeights struct {
 	Network float64
 	CPU     float64
-	PPS     float64
 	Tunnels float64
 	Memory  float64
 }
@@ -30,7 +31,6 @@ func (p PlacementPolicy) Validate() error {
 		p.MaxCPUUsage,
 		p.MaxMemoryUsage,
 		p.MaxNetworkUsage,
-		p.MaxPPSUsage,
 	}
 
 	for _, threshold := range thresholds {
@@ -45,7 +45,6 @@ func (p PlacementPolicy) Validate() error {
 	weights := []float64{
 		p.Weights.Network,
 		p.Weights.CPU,
-		p.Weights.PPS,
 		p.Weights.Tunnels,
 		p.Weights.Memory,
 	}
@@ -82,7 +81,6 @@ func SelectVPS(
 
 	totalWeight := policy.Weights.Network +
 		policy.Weights.CPU +
-		policy.Weights.PPS +
 		policy.Weights.Tunnels +
 		policy.Weights.Memory
 
@@ -93,8 +91,7 @@ func SelectVPS(
 
 		// Validate configured capacities.
 		if vps.MaxTunnels <= 0 ||
-			vps.NetworkCapacityMbps <= 0 ||
-			vps.SustainablePPS == 0 {
+			vps.NetworkCapacityMbps <= 0 {
 			continue
 		}
 
@@ -124,13 +121,8 @@ func SelectVPS(
 			vps.TxMbps,
 		) / vps.NetworkCapacityMbps
 
-		// PPS utilization based on bootstrap benchmark.
-		pps := float64(vps.PacketsPerSecond) /
-			float64(vps.SustainablePPS)
-
 		// Reject overloaded relays.
-		if network >= policy.MaxNetworkUsage/100 ||
-			pps >= policy.MaxPPSUsage/100 {
+		if network >= policy.MaxNetworkUsage/100 {
 			continue
 		}
 
@@ -144,7 +136,6 @@ func SelectVPS(
 		// Weighted placement score.
 		score := (policy.Weights.Network*network +
 			policy.Weights.CPU*cpu +
-			policy.Weights.PPS*pps +
 			policy.Weights.Tunnels*tunnels +
 			policy.Weights.Memory*memory) / totalWeight
 
