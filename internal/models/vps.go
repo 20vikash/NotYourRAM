@@ -14,9 +14,11 @@ type VPS struct {
 	Status VPSStatus
 
 	// Capacity
-	MaxTunnels      int // Admin configurable field.
-	AssignedTunnels int
-	ActiveTunnels   int
+	MaxTunnels          int // Admin configurable field.
+	AssignedTunnels     int
+	ActiveTunnels       int
+	NetworkCapacityMbps float64
+	SustainablePPS      uint64 // Will be benchmarked during bootstrap and used for PPS utilization calculation.
 
 	// Port allocation
 	AllocatedTCPPorts int
